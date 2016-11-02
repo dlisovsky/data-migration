@@ -1,0 +1,81 @@
+<apex:page controller="MigrationLogController" sidebar="false" readOnly="true" renderAs="{!IF(isPDF, 'pdf', 'html')}" showHeader="false" title="Data Migration Log">
+    
+    <apex:outputPanel rendered="{!NOT(isPDF)}">
+        <style>
+    
+            body{
+                padding: 20px;
+            }
+    
+            table{
+                border-collapse:collapse;
+            }
+        
+            td{
+                padding: 3px;
+                border-bottom: 1px solid black;
+            }
+            
+            tr.Error{
+                background-color:  rgba(255, 0, 0, 0.14);
+            }
+            
+            tr.Warning{
+                background-color:  rgba(229, 193, 48, 0.42);
+            }
+            
+            th{
+                border: 1px solid black;
+                padding: 3px 10px;
+                
+            }
+        </style>
+    </apex:outputPanel>
+    
+    
+    <apex:form rendered="{!NOT(isPDF)}">
+        
+        <br/>
+        
+        <apex:outputLink value="/">Home</apex:outputLink>&nbsp;&nbsp;|&nbsp;&nbsp;
+        <apex:outputLink value="{!URLFOR($Page.MigrationLog)}?pdf" target="_blank">Open PDF</apex:outputLink> 
+        
+        <hr/>
+        
+        <apex:selectList value="{!selectedLogLevels}" multiselect="true">
+            <apex:selectOptions value="{!logLevels}"/>
+        </apex:selectList><p/>
+        <apex:commandButton value="Filter" action="{!filter}"/>
+    </apex:form>
+
+    
+    <hr/>
+    
+    <table width="100%" >
+        <tr>
+            <th>
+                Log Level
+            </th>
+            <th>
+                Details
+            </th>
+            <th>
+                Migration Task/Service
+            </th>
+        </tr>
+        <apex:repeat value="{!logs}" var="log">
+            <tr class="{!log.Log_Level__c}">
+                <td>
+                    {!log.Log_Level__c}
+                </td>
+                <td width="100%">
+                    {!log.Details__c}
+                </td>
+                <td>
+                    {!log.Migration_Service__c }
+                </td>
+            </tr>
+        </apex:repeat>
+    </table>
+
+</apex:page>
