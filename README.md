@@ -28,14 +28,14 @@ run java Command-Line FileSplit.class app. Set total count or rows per file and 
 MigrationTask deleteLogsMigrationTask = new MigrationTask(
     'deleteLogsMigrationTask',
     'SELECT Id FROM MIGRATION_Log__c',
-    CleanUpMigrationService.class
+    MigrationCleanUpService.class
 );
 
 // Clean imported Contacts. In case when you need to reimport the Contacts.
 MigrationTask deleteContactsMigrationTask = new MigrationTask(
     'deleteContactsMigrationTask',
     'SELECT Id FROM Contact WHERE Migration_Status__c = \'Imported\'',
-    CleanUpMigrationService.class
+    MigrationCleanUpService.class
 );
 
 // Upload contacts from the Documents.
