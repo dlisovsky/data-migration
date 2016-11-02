@@ -15,14 +15,14 @@ Salesforce Data Migration utilities.
 <p>Services provide an ability to upload data from CSV files to SF. Custom binders alllow to format inport data and create the relationships.</p>
 
 
-1. Prepare CSV file (make sure that file doesn't have non ASCII symbols)
-2. Split CSV file using FileSplit (each file must have less then 10k rows to avoid from SF DML limits, suggested count of rows is 5k)
+* Prepare CSV file (make sure that file doesn't have non ASCII symbols)
+* Split CSV file using FileSplit (each file must have less then 10k rows to avoid from SF DML limits, suggested count of rows is 5k)
 ```
 run java Command-Line FileSplit.class app. Set total count or rows per file and file name
 ```
-3. Upload CSV parts as SF documents with FileUpload page
-4. Create migration service using data binders [Example MigrationContactService](../master/src/classes/MigrationContactService.cls)
-5. Run migration process
+* Upload CSV parts as SF documents with FileUpload page
+* Create migration service using data binders [Example MigrationContactService](../master/src/classes/MigrationContactService.cls)
+* Run migration process
 ```java
 // Clean LOG.
 MigrationTask deleteLogsMigrationTask = new MigrationTask(
@@ -53,4 +53,4 @@ deleteLogsMigrationTask
 
 deleteLogsMigrationTask.run();
 ```
-6. Open MigrationLog page to see the log.
+* Open MigrationLog page to see the log.
