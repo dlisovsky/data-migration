@@ -224,7 +224,7 @@
                         var base64value = window.btoa(evt.target.result);
                         
                         //Use js remoting to send the base64 encoded chunk for uploading
-                        FileUploadPageController.attachBlob(documentId,currentFile.name,currentFile.type,base64value,function(result,event){
+                        MigrationFileUploadPageController.attachBlob(documentId,currentFile.name,currentFile.type,base64value,function(result,event){
                 
                             //Proceed if there were no errors with the remoting call
                             if(event.status == true){
