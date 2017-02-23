@@ -162,7 +162,8 @@ public class MigrationBinders {
                 }
                 
                 try{
-                    Decimal value = Decimal.valueOf(data.get(columnName));
+                    String columnValue = data.get(columnName).replaceAll('[^0-9.]*', '');
+                    Decimal value = Decimal.valueOf(columnValue);
                     record.put(fieldName, value);   
                 }catch(Exception ex){
                     MigrationLog.error(
