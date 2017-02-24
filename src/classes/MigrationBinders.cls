@@ -292,15 +292,19 @@ public class MigrationBinders {
         
         public CustomMappingStringBinder(Map<String, String> mapping, Map<String, String> valuesMapping){
             this.mapping = mapping;
-            this.valuesMapping = valuesMapping;
+            this.valuesMapping = new Map<String, String>();
+            for (String key : valuesMapping.keySet()) {
+                String value = valuesMapping.get(key);
+                this.valuesMapping.put(key.trim().toLowerCase(), value);
+            }
         }
         
         public void bind(sObject record, Map<String, String> data){
             for(String columnName : mapping.keySet()){
                 String fieldName = mapping.get(columnName);
                 String value = data.get(columnName);
-                if (value !=null ){
-                    value = value.trim();
+                if (value != null ){
+                    value = value.trim().toLowerCase();
                 }
                 
                 if (this.valuesMapping.containsKey(value)){
