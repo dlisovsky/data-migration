@@ -37,7 +37,10 @@ public abstract class MigrationCSVService extends MigrationAbstractService {
         
     }
     
+    public virtual void beforeProcessCSV(MigrationCSVReader.CSVWrapper csvWrapper) {}
+    
     public virtual void processCSV(MigrationCSVReader.CSVWrapper csvWrapper){
+        beforeProcessCSV(csvWrapper);
         
         Integer totalRows = csvWrapper.getTotalRows();
         for(Integer rowIndex = 0; rowIndex < totalRows; rowIndex++){
