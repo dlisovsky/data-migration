@@ -125,6 +125,22 @@ public class MigrationCSVReader {
         public Integer getTotalRows(){
             return rows.size();
         }
+        
+        public List<String> getColumnValues(String columnName) {
+            List<String> columnValues = new List<String>();
+
+            Integer totalRows = getTotalRows();
+            for (Integer rowIndex = 0; rowIndex < totalRows; rowIndex++) {
+                columnValues.add(getRowData(rowIndex).get(columnName));
+            }
+
+            return columnValues;
+        }
+
+        public Set<String> getColumnUniqueValues(String columnName) {
+            return new Set<String>(getColumnValues(columnName));
+        }
+
     }
     
     private class RowReader implements Iterator<String>, Iterable<String> {      
