@@ -131,7 +131,10 @@ public class MigrationCSVReader {
 
             Integer totalRows = getTotalRows();
             for (Integer rowIndex = 0; rowIndex < totalRows; rowIndex++) {
-                columnValues.add(getRowData(rowIndex).get(columnName));
+                String columnValue = getRowData(rowIndex).get(columnName);
+                if (String.isNotBlank(columnValue)) {
+                    columnValues.add(columnValue);
+                }
             }
 
             return columnValues;
