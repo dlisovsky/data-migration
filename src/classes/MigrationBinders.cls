@@ -310,8 +310,10 @@ public class MigrationBinders {
                 if (this.valuesMapping.containsKey(value)){
                     value = this.valuesMapping.get(value);
                 }
-                
-                record.put(fieldName, value);
+
+                if (String.isNotBlank(value)) {
+                    record.put(fieldName, value);
+                }
             }
         }
         
