@@ -303,7 +303,7 @@ public class MigrationBinders {
             for(String columnName : mapping.keySet()){
                 String fieldName = mapping.get(columnName);
                 String value = data.get(columnName);
-                if (value != null){
+                if (String.isNotBlank(value)){
                     value = value.trim().toLowerCase();
                 }
                 
