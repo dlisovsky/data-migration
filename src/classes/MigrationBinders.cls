@@ -319,6 +319,39 @@ public class MigrationBinders {
         
     }
     
+    public class CustomMappingIdBinder implements IBinder{
+
+        private Map<String, String> mapping;
+        private Map<String, Id> valuesMapping;
+
+        public CustomMappingIdBinder(Map<String, String> mapping, Map<String, Id> valuesMapping){
+            this.mapping = mapping;
+            this.valuesMapping = new Map<String, Id>();
+            for (String key : valuesMapping.keySet()) {
+                String value = valuesMapping.get(key);
+                this.valuesMapping.put(key.trim().toLowerCase(), value);
+            }
+        }
+
+        public void bind(sObject record, Map<String, String> data){
+            for(String columnName : mapping.keySet()){
+                String fieldName = mapping.get(columnName);
+                String value = data.get(columnName);
+                if (String.isNotBlank(value)){
+                    value = value.trim().toLowerCase();
+                }
+
+                if (this.valuesMapping.containsKey(value)){
+                    value = this.valuesMapping.get(value);
+                }
+
+                if (String.isNotBlank(value) && (value instanceof Id)) {
+                    record.put(fieldName, value);
+                }
+            }
+        }
+
+    }
     
     public class JoinStringBinder implements IBinder{
         
