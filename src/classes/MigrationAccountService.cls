@@ -9,6 +9,10 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
     private Map<String, String> existingContactIdsByEmails;
     private Map<String, String> accountRecordTypeIdsByDeveloperName;
 
+    private Map<String, Account> accountsByNames;
+    private Map<String, String> parentNamesByAccountNames;
+    private SetParentAccountDoWork setParentAccountDoWork;
+
     private MigrationBinders.BinderQueue accountBinderQueue;
     private MigrationBinders.BinderQueue contactBinderQueue;
 
@@ -24,15 +28,19 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
         existingUserIdsByNames = new Map<String, String>();
         existingContactIdsByEmails = new Map<String, String>();
 
-        accountBinderQueue = getAccountBinderQueue();
-        contactBinderQueue = getContactBinderQueue();
-
         accountRecordTypeIdsByDeveloperName = new Map<String, String>();
         Map<Id, String> recordTypeDeveloperNamesByIds = Helper.getRecordTypesMap(Account.SObjectType);
         for (Id recTypeId : recordTypeDeveloperNamesByIds.keySet()) {
             String developerName = recordTypeDeveloperNamesByIds.get(recTypeId);
             accountRecordTypeIdsByDeveloperName.put(developerName, recTypeId);
         }
+
+        accountsByNames = new Map<String, Account>();
+        parentNamesByAccountNames = new Map<String, String>();
+        setParentAccountDoWork = new SetParentAccountDoWork();
+
+        accountBinderQueue = getAccountBinderQueue();
+        contactBinderQueue = getContactBinderQueue();
     }
 
     private MigrationBinders.BinderQueue getAccountBinderQueue() {
@@ -43,7 +51,6 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                         'Organisation Name' => 'Name',
                         'Categories' => 'Categories__c',
                         'Sub Category' => 'Sub_Category__c',
-                        'Parent Organisation' => '',
                         'Organisation Source' => 'AccountSource',
                         'Phone' => 'Phone',
                         'Fax' => 'Fax',
@@ -51,9 +58,9 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                         'Billing Suburb' => 'BillingCity',
                         'Billing State' => 'BillingState',
                         'Billing Postcode' => 'BillingPostalCode',
-                        'Mailing Suburb' => 'OtherCity',
-                        'Mailing State' => 'OtherState',
-                        'Mailing Postcode' => 'OtherPostalCode'
+                        'Mailing Suburb' => 'ShippingCity',
+                        'Mailing State' => 'ShippingState',
+                        'Mailing Postcode' => 'ShippingPostalCode'
                 }
         ));
 
@@ -63,7 +70,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                                 'Billing Street Line 1',
                                 'Billing Street Line 2'
                         },
-                        'OtherStreet' => new Set<String> {
+                        'ShippingStreet' => new Set<String> {
                                 'Mailing Street Line 1',
                                 'Mailing Street Line 2'
                         }
@@ -75,21 +82,28 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                 }
         ));
 
-        binders.add(new MigrationBinders.CustomMappingStringBinder(
+        binders.add(new MigrationBinders.CustomMappingIdBinder(
                 new Map<String, String>{
                         'Owner' => 'OwnerId'
                 },
                 existingUserIdsByNames
         ));
 
-        binders.add(new MigrationBinders.CustomMappingStringBinder(
+        binders.add(new MigrationBinders.CustomMappingIdBinder(
                 new Map<String, String>{
                         'Organisation Name' => 'Id'
                 },
                 existingAccountIdsByNames
         ));
 
-        binders.add(new MigrationBinders.CustomMappingStringBinder(
+        binders.add(new MigrationBinders.CustomMappingIdBinder(
+                new Map<String, String>{
+                        'Parent Organisation' => 'ParentId'
+                },
+                existingAccountIdsByNames
+        ));
+
+        binders.add(new MigrationBinders.CustomMappingIdBinder(
                 new Map<String, String>{
                         'Record Type' => 'RecordTypeId'
                 },
@@ -101,15 +115,16 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                 new Map<String, String>{
                         'Name' => '?',
                         'BillingCountry' => 'Australia',
-                        'OtherCountry' => 'Australia',
+                        'ShippingCountry' => 'Australia',
                         'Migration_Status__c' => 'Organisation Import'
+//                        'OwnerId' => UserInfo.getUserId()
                 }
         ));
 
         binders.add(new MigrationBinders.UpperCaseBinder(
                 new Set<String>{
                         'BillingCity',
-                        'OtherCity'
+                        'ShippingCity'
                 }
         ));
 
@@ -151,7 +166,14 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                 }
         ));
 
-        binders.add(new MigrationBinders.CustomMappingStringBinder(
+        binders.add(new MigrationBinders.CustomMappingIdBinder(
+                new Map<String, String>{
+                        'Organisation Name' => 'Id'
+                },
+                existingContactIdsByEmails
+        ));
+
+        binders.add(new MigrationBinders.CustomMappingIdBinder(
                 new Map<String, String>{
                         'Owner' => 'OwnerId'
                 },
@@ -165,6 +187,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                         'MailingCountry' => 'Australia',
                         'OtherCountry' => 'Australia',
                         'Migration_Status__c' => 'Organisation Import'
+//                        'OwnerId' => UserInfo.getUserId()
                 }
         ));
 
@@ -181,29 +204,43 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
     public override void beforeProcessCSV(MigrationCSVReader.CSVWrapper csvWrapper) {
         // Search for existing Accounts by Names
         this.existingAccountIdsByNames = new Map<String, String>();
+//        // To avoid invalid values in Id field
+//        for (String value : csvWrapper.getColumnUniqueValues('Organisation Name')) {
+//            this.existingAccountIdsByNames.put(value, null);
+//        }
+        // Search in database
         List<Account> existingAccounts = (List<Account>)new DynamicSelector(Account.SObjectType)
-                .selectByNames(csvWrapper.getColumnUniqueValues('Organisation Name'));
+                .selectByNames(this.existingAccountIdsByNames.keySet());
         for (Account existingAccount : existingAccounts) {
-            String existingAccountName = existingAccount.Name.trim().toLowerCase();
-            this.existingAccountIdsByNames.put(existingAccountName, existingAccount.Id);
+            this.existingAccountIdsByNames.put(existingAccount.Name, existingAccount.Id);
         }
 
         // Search for existing Users by Names
         this.existingUserIdsByNames = new Map<String, String>();
-        List<User> existingUsers = (List<User>)new DynamicSelector(User.SObjectType)
-                .selectByNames(csvWrapper.getColumnUniqueValues('Owner'));
+//        // To avoid invalid values in Id field
+//        for (String value : csvWrapper.getColumnUniqueValues('Owner')) {
+//            this.existingUserIdsByNames.put(value, null);
+//        }
+        // Search in database
+        List<User> existingUsers = new UserSelector()
+                .selectByNames(this.existingUserIdsByNames.keySet());
         for (User existingUser : existingUsers) {
-            String existingUserName = existingUser.Name.trim().toLowerCase();
-            this.existingUserIdsByNames.put(existingUserName, existingUser.Id);
+            this.existingUserIdsByNames.put(existingUser.Name, existingUser.Id);
         }
 
         // Search for existing Contacts by Emails
         this.existingContactIdsByEmails = new Map<String, String>();
+//        // To avoid invalid values in Id field
+//        for (String value : csvWrapper.getColumnUniqueValues('Email')) {
+//            this.existingContactIdsByEmails.put(value, null);
+//        }
+        // Search in database
         List<Contact> existingContacts = new ContactSelector()
-                .selectByEmails(csvWrapper.getColumnUniqueValues('Email'));
+                .selectByEmails(this.existingContactIdsByEmails.keySet());
         for (Contact existingContact : existingContacts) {
-            String existingContactEmail = existingContact.Email.trim().toLowerCase();
-            this.existingContactIdsByEmails.put(existingContactEmail, existingContact.Id);
+            if (String.isNotBlank(existingContact.Email)) {
+                this.existingContactIdsByEmails.put(existingContact.Email, existingContact.Id);
+            }
         }
     }
 
@@ -217,12 +254,22 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                 rowData
         );
 
+        newAccount.BillingStreet = replaceSeparators(newAccount.BillingStreet);
+        newAccount.ShippingStreet = replaceSeparators(newAccount.ShippingStreet);
         if (newAccount.Id != null) {
             newAccount.Migration_Status__c = 'Updated by Organisation Import';
             uow.registerDirty(newAccount);
         } else {
             uow.registerNew(newAccount);
         }
+        // If was not populated by Binders
+        if (newAccount.ParentId == null) {
+            String parentAccountName = rowData.get('Parent Organisation');
+            if (String.isNotBlank(parentAccountName)) {
+                parentNamesByAccountNames.put(newAccount.Name.trim().toLowerCase(), parentAccountName.trim().toLowerCase());
+            }
+        }
+        accountsByNames.put(newAccount.Name.trim().toLowerCase(), newAccount);
 
         Contact newContact = new Contact();
         contactBinderQueue.process(
@@ -231,6 +278,13 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
         );
 
         if (String.isNotBlank(newContact.Email)) {
+            newContact.MailingStreet = replaceSeparators(newContact.MailingStreet);
+            newContact.OtherStreet = replaceSeparators(newContact.OtherStreet);
+            // To avoid "String too long" exception (max length = 80)
+            if (newContact.LastName!= null && newContact.LastName.length() > 80) {
+                newContact.LastName = newContact.LastName.substring(0, 79);
+            }
+
             if (newContact.Id != null) {
                 newContact.Migration_Status__c = 'Updated by Organisation Import';
                 uow.registerDirty(newContact);
@@ -238,13 +292,64 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                 uow.registerNew(newContact);
             }
             uow.registerRelationship(newContact, Contact.AccountId, newAccount);
+            uow.registerRelationship(newAccount, Account.npe01__One2OneContact__c, newContact);
         }
     }
 
     public override void afterProcess(List<Object> objectsVar) {
+        for (String accountName : parentNamesByAccountNames.keySet()) {
+            String parentName = parentNamesByAccountNames.get(accountName);
+            Account accountVar = accountsByNames.get(accountName);
+            if (accountsByNames.containsKey(parentName)) {
+                Account parentAccount = accountsByNames.get(parentName);
+                setParentAccountDoWork.addRelationship(accountVar, parentAccount);
+            }
+        }
+        uow.registerWork(setParentAccountDoWork);
+
         uow.commitWork();
 
         super.afterProcess(objectsVar);
+    }
+
+    private String replaceSeparators(String value) {
+        if (value != null && value.contains('&N&')) {
+            value = value.replaceAll('&N&', '\r\n');
+        }
+        return value;
+    }
+
+    private class SetParentAccountDoWork implements fflib_SObjectUnitOfWork.IDoWork {
+        private List<ParentAccountRelationship> relationships;
+
+        public SetParentAccountDoWork() {
+            relationships = new List<ParentAccountRelationship>();
+        }
+
+        public void addRelationship(Account accountVar, Account parentAccountVar) {
+            relationships.add(new ParentAccountRelationship(accountVar, parentAccountVar));
+        }
+
+        public void doWork() {
+            List<Account> accountsToUpdate = new List<Account>();
+            for (ParentAccountRelationship relationship : relationships) {
+                if(relationship.parentAccountVar != null){
+                    relationship.accountVar.ParentId = relationship.parentAccountVar.Id;
+                    accountsToUpdate.add(relationship.accountVar);
+                }
+            }
+            update accountsToUpdate;
+        }
+    }
+
+    private class ParentAccountRelationship {
+        public Account accountVar {get; private set;}
+        public Account parentAccountVar {get; private set;}
+
+        public ParentAccountRelationship(Account accountVar, Account parentAccountVar) {
+            this.accountVar = accountVar;
+            this.parentAccountVar = parentAccountVar;
+        }
     }
 
 }
