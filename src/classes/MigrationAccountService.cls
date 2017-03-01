@@ -292,7 +292,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
                 uow.registerNew(newContact);
             }
             uow.registerRelationship(newContact, Contact.AccountId, newAccount);
-            uow.registerRelationship(newAccount, Account.npe01__One2OneContact__c, newContact);
+            //uow.registerRelationship(newAccount, Account.npe01__One2OneContact__c, newContact);
         }
     }
 
