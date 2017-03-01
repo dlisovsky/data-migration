@@ -29,7 +29,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
         existingContactIdsByEmails = new Map<String, String>();
 
         accountRecordTypeIdsByDeveloperName = new Map<String, String>();
-        Map<Id, String> recordTypeDeveloperNamesByIds = Helper.getRecordTypesMap(Account.SObjectType);
+        Map<Id, String> recordTypeDeveloperNamesByIds = new Map<Id, String>(); //Helper.getRecordTypesMap(Account.SObjectType);
         for (Id recTypeId : recordTypeDeveloperNamesByIds.keySet()) {
             String developerName = recordTypeDeveloperNamesByIds.get(recTypeId);
             accountRecordTypeIdsByDeveloperName.put(developerName, recTypeId);
