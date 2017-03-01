@@ -49,18 +49,24 @@ public class MigrationBinders {
     }
     
     // Allows to process multiple binders.
-    public class BinderQueue{
+   public class BinderQueue{
         private List<IBinder> binders;
+        public final Map<String, Object> params;
         
         public BinderQueue(List<IBinder> binders){
+            this(binders, new Map<String, Object>());
+        }
+
+        public BinderQueue(List<IBinder> binders, Map<String, Object> params){
             this.binders = binders;
+            this.params = params;
         }
         
         public BinderQueue addBinder(IBinder binder){
             this.binders.add(binder);
             return this;
         }
-        
+
         public void process(sObject record, Map<String, String> data){
             for(IBinder initializer : this.binders){
                 initializer.bind(record, data);
@@ -411,13 +417,13 @@ public class MigrationBinders {
                 String fieldName = mapping.get(columnName);
                 
                 if (record.get(fieldName) != null){ // TODO. add binder options to configure override binding settings.
-                    return;
+                    continue;
                 }
                 
                 String email = data.get(columnName);
                 
                 if (String.isBlank(email)){
-                    return;
+                    continue;
                 }
                 
                 email = email.removeEnd('`');
@@ -435,7 +441,7 @@ public class MigrationBinders {
                     );
                     
                     // Skip wrong emails.
-                    return;
+                    continue;
                 }
                 
                 
