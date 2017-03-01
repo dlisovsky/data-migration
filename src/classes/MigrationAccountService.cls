@@ -248,7 +248,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
 
         rowData.put('LOG_INFO', getDocumentLogInfo());
 
-        Account newAccount = new Account(Migration_Data__c = JSON.serialize(rowData));
+        Account newAccount = new Account();
         accountBinderQueue.process(
                 newAccount,
                 rowData
