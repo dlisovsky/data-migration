@@ -1005,6 +1005,22 @@ public class MigrationBinders {
         }
     }
     
+    public static Object getMigrationDetails(String source, String type){
+        Map<String, Object> sourceMap = String.isNotBlank(source) ? (Map<String, Object>)JSON.deserializeUntyped(source) : new Map<String, Object>();
+        return sourceMap.get(type);
+    }
+
+
+    public static String setMigrationDetails(String source, String type, Object details){
+        Map<String, Object> sourceMap = String.isNotBlank(source) ? (Map<String, Object>)JSON.deserializeUntyped(source) : new Map<String, Object>();
+        sourceMap.put(type, details);
+        return JSON.serializePretty(sourceMap);
+    }
+
+    public static String setMigrationDetails(String type, Object obj){
+        return setMigrationDetails(null, type, obj);
+    }
+    
     
     public class MigrationException extends Exception {}
     public class BindingException extends Exception {}
