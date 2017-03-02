@@ -341,18 +341,25 @@ public class MigrationBinders {
 
         public void bind(sObject record, Map<String, String> data){
             for(String columnName : mapping.keySet()){
-                String fieldName = mapping.get(columnName);
-                String value = data.get(columnName);
-                if (String.isNotBlank(value)){
-                    value = value.trim().toLowerCase();
-                }
+                try {
+                    String fieldName = mapping.get(columnName);
+                    String value = data.get(columnName);
+                    if (String.isNotBlank(value)) {
+                        value = value.trim().toLowerCase();
+                    }
 
-                if (this.valuesMapping.containsKey(value)){
-                    value = this.valuesMapping.get(value);
-                }
+                    Id fieldValue = null;
+                    if (this.valuesMapping.containsKey(value)) {
+                        fieldValue = (Id)this.valuesMapping.get(value);
+                    }
 
-                if (String.isNotBlank(value) && (value instanceof Id)) {
-                    record.put(fieldName, value);
+                    Schema.SObjectType sobjectType = fieldValue.getSObjectType();
+
+                    if (fieldValue != null) {
+                        record.put(fieldName, value);
+                    }
+                } catch(Exception ex) {
+                    continue;
                 }
             }
         }
