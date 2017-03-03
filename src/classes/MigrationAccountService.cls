@@ -1,8 +1,4 @@
-/**
- * Created by Vlad Khitrik on 25.02.2017.
- */
-
-public with sharing class MigrationAccountService extends MigrationCSVService {
+public class MigrationAccountService extends MigrationCSVService {
 
 //    private Map<String, String> existingAccountIdsByNames;
 //    private Map<String, String> existingUserIdsByNames;
@@ -136,7 +132,6 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
 //        binders.add(new MigrationBinders.StringValueBinder(
 //                new Map<String, String> {
 //                        'Organisation Name' => 'LastName',
-//                        'Email' => 'Email',
 //                        'Phone' => 'Phone',
 //                        'Billing Suburb' => 'OtherCity',
 //                        'Billing State' => 'OtherState',
@@ -165,9 +160,15 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
 //                }
 //        ));
 //
+//        binders.add(new MigrationBinders.EmailBinder(
+//                new Map<String, String>{
+//                        'Email' => 'Email'
+//                }
+//        ));
+//
 //        binders.add(new MigrationBinders.CustomMappingIdBinder(
 //                new Map<String, String>{
-//                        'Organisation Name' => 'Id'
+//                        'Email' => 'Id'
 //                },
 //                existingContactIdsByEmails
 //        ));
@@ -203,7 +204,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
 //        // Search for existing Accounts by Names
 //        this.existingAccountIdsByNames = new Map<String, String>();
 //        List<Account> existingAccounts = (List<Account>)new DynamicSelector(Account.SObjectType)
-//                .selectByNames(this.existingAccountIdsByNames.keySet());
+//                .selectByNames(csvWrapper.getColumnUniqueValues('Organisation Name'));
 //        for (Account existingAccount : existingAccounts) {
 //            this.existingAccountIdsByNames.put(existingAccount.Name, existingAccount.Id);
 //        }
@@ -211,7 +212,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
 //        // Search for existing Users by Names
 //        this.existingUserIdsByNames = new Map<String, String>();
 //        List<User> existingUsers = new UserSelector()
-//                .selectByNames(this.existingUserIdsByNames.keySet());
+//                .selectByNames(csvWrapper.getColumnUniqueValues('Owner'));
 //        for (User existingUser : existingUsers) {
 //            this.existingUserIdsByNames.put(existingUser.Name, existingUser.Id);
 //        }
@@ -219,7 +220,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
 //        // Search for existing Contacts by Emails
 //        this.existingContactIdsByEmails = new Map<String, String>();
 //        List<Contact> existingContacts = new ContactSelector()
-//                .selectByEmails(this.existingContactIdsByEmails.keySet());
+//                .selectByEmails(csvWrapper.getColumnUniqueValues('Email'));
 //        for (Contact existingContact : existingContacts) {
 //            if (String.isNotBlank(existingContact.Email)) {
 //                this.existingContactIdsByEmails.put(existingContact.Email, existingContact.Id);
@@ -269,7 +270,7 @@ public with sharing class MigrationAccountService extends MigrationCSVService {
 //            }
 //
 //            if (newContact.Id != null) {
-//                newContact.Migration_Status__c = 'Updated by Organisations Import';
+//                newContact = new Contact(Id = newContact.Id);
 //                uow.registerDirty(newContact);
 //            } else {
 //                uow.registerNew(newContact);
