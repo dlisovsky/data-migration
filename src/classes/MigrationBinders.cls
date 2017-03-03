@@ -355,7 +355,7 @@ public class MigrationBinders {
 
                     Schema.SObjectType sobjectType = fieldValue.getSObjectType();
 
-                    if (fieldValue != null && Pattern.compile('[a-zA-Z0-9]{15}|[a-zA-Z0-9]{18}').matcher(fieldValue).matches()) {
+                    if (fieldValue != null) {
                         record.put(fieldName, fieldValue);
                     }
                 } catch(Exception ex) {
